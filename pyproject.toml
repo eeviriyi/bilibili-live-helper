@@ -1,0 +1,15 @@
+[project]
+name = "fansmedalhelper"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "aiohttp>=3.14.1",
+    "loguru>=0.7.3",
+    "pyyaml>=6.0.3",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+]

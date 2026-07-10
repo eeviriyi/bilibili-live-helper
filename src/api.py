@@ -282,7 +282,7 @@ class BiliApi:
                 )
                 data.update(
                     {
-                        "msg": "111",
+                        "msg": random.choice(danmakus),
                     }
                 )
                 self.headers.update(

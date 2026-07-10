@@ -1,14 +1,14 @@
-FROM python:3.9-alpine
-ENV TZ="Asia/Shanghai"
+FROM python:3.10-alpine
 
-WORKDIR /tmp
-
-RUN apk add --no-cache git \
-    && git config --global --add safe.directory "*" \
-    && git clone https://github.com/xiaofeiTM233/fansMedalHelper /app/fansMedalHelper \
-    && pip install --no-cache-dir -r /app/fansMedalHelper/requirements.txt \
-    && rm -rf /tmp/*
+ENV TZ=Asia/Shanghai
 
 WORKDIR /app/fansMedalHelper
 
-ENTRYPOINT ["/bin/sh","/app/fansMedalHelper/entrypoint.sh"]
+COPY requirements.txt ./
+
+RUN apk add --no-cache tzdata \
+    && pip install --no-cache-dir -r requirements.txt
+
+COPY . ./
+
+CMD ["python3", "-m", "fans_medal_helper"]
