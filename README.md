@@ -5,7 +5,7 @@ starts work only when a streamer with one of your medals is live.
 
 For each streamer, once per Asia/Shanghai calendar day, the runner:
 
-1. Reports one 300-click like.
+1. Reports ten 30-click likes, four seconds apart by default.
 2. Sends live heartbeats for the configured duration.
 3. Sends `[花]` or `[比心]` ten times by default, with a three-minute interval.
 
@@ -45,6 +45,11 @@ docker run -d --name fans-medal-helper \
 - A transient API failure is retried three times with exponential backoff; a
   failed poll is retried at the next polling interval.
 - Stream tasks are capped by `max_concurrent_streams`.
+- Bilibili API calls are serialized per account with a one-second minimum gap.
+- Watch heartbeats use one account-wide slot. Other live rooms wait rather than
+  claiming simultaneous watch time.
+- Like reports are serialized. Danmaku keeps its per-room interval and has an
+  additional account-wide minimum gap.
 - The per-day task record is in memory. Restarting the process may repeat a
   task for a streamer already handled that day.
 - Bilibili API behavior and anti-abuse policies can change. Use conservative

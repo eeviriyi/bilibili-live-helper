@@ -8,12 +8,18 @@ accounts:
 poll_interval_seconds: 120
 request_timeout_seconds: 15
 max_concurrent_streams: 3
+api_interval_seconds: 1
+
+like_clicks_per_request: 30
+like_request_count: 10
+like_interval_seconds: 4
 
 watch_minutes: 30
 heartbeat_interval_seconds: 60
 
 danmaku_count: 10
 danmaku_interval_seconds: 180
+global_danmaku_interval_seconds: 3
 
 # Optional. Use a private topic or self-hosted endpoint.
 # ntfy:

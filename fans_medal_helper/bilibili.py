@@ -61,11 +61,11 @@ class BilibiliClient:
     async def live_medals(self) -> list[Medal]:
         return [medal async for medal in self._medals() if medal.live_status]
 
-    async def like(self, medal: Medal) -> None:
+    async def like(self, medal: Medal, click_count: int) -> None:
         await self._post(
             "https://api.live.bilibili.com/xlive/app-ucenter/v1/like_info_v3/like/likeReportV3",
             {
-                "click_time": 300,
+                "click_time": click_count,
                 "room_id": medal.room_id,
                 "anchor_id": medal.anchor_id,
                 "uid": self.mid,

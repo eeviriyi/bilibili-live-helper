@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import time
 from collections.abc import Awaitable, Callable
 from datetime import datetime, date
 from typing import Protocol
@@ -15,7 +16,7 @@ Sleep = Callable[[float], Awaitable[None]]
 
 class LiveClient(Protocol):
     async def live_medals(self) -> list[Medal]: ...
-    async def like(self, medal: Medal) -> None: ...
+    async def like(self, medal: Medal, click_count: int) -> None: ...
     async def heartbeat(self, medal: Medal) -> None: ...
     async def send_danmaku(self, medal: Medal) -> str: ...
 
@@ -41,6 +42,10 @@ class LiveTaskRunner:
         self.active: dict[int, asyncio.Task[None]] = {}
         self.day: date | None = None
         self.stream_semaphore = asyncio.Semaphore(settings.max_concurrent_streams)
+        self.watch_semaphore = asyncio.Semaphore(1)
+        self.like_lock = asyncio.Lock()
+        self.api_gate = MinimumInterval(settings.api_interval_seconds, sleep)
+        self.danmaku_gate = MinimumInterval(settings.global_danmaku_interval_seconds, sleep)
 
     async def run_forever(self) -> None:
         while True:
@@ -53,7 +58,7 @@ class LiveTaskRunner:
     async def run_once(self) -> list[asyncio.Task[None]]:
         self._reset_daily_state()
         tasks: list[asyncio.Task[None]] = []
-        for medal in await self.client.live_medals():
+        for medal in await self._api_call(self.client.live_medals):
             if medal.anchor_id in self.completed_today or medal.anchor_id in self.active:
                 continue
             self.logger.info("检测到 %s 开播，开始本日粉丝牌任务", medal.anchor_name)
@@ -66,9 +71,14 @@ class LiveTaskRunner:
     async def _run_room(self, medal: Medal) -> None:
         try:
             async with self.stream_semaphore:
-                await self.client.like(medal)
+                await self._like(medal)
                 self.completed_today.add(medal.anchor_id)
-                self.logger.info("%s 开播点赞完成（300 次）", medal.anchor_name)
+                self.logger.info(
+                    "%s 开播点赞完成（%s x %s）",
+                    medal.anchor_name,
+                    self.settings.like_clicks_per_request,
+                    self.settings.like_request_count,
+                )
                 results = await asyncio.gather(
                     self._watch_live(medal),
                     self._send_danmaku(medal),
@@ -89,17 +99,30 @@ class LiveTaskRunner:
         await self._notify("开播任务完成", f"{medal.anchor_name} 的点赞、观看和应援弹幕任务已完成", "white_check_mark")
 
     async def _watch_live(self, medal: Medal) -> None:
-        for heartbeat_number in range(1, self.settings.watch_minutes + 1):
-            await self.client.heartbeat(medal)
-            if heartbeat_number < self.settings.watch_minutes:
-                await self.sleep(self.settings.heartbeat_interval_seconds)
+        async with self.watch_semaphore:
+            for heartbeat_number in range(1, self.settings.watch_minutes + 1):
+                await self._api_call(self.client.heartbeat, medal)
+                if heartbeat_number < self.settings.watch_minutes:
+                    await self.sleep(self.settings.heartbeat_interval_seconds)
 
     async def _send_danmaku(self, medal: Medal) -> None:
         for message_number in range(1, self.settings.danmaku_count + 1):
-            message = await self.client.send_danmaku(medal)
+            await self.danmaku_gate.wait()
+            message = await self._api_call(self.client.send_danmaku, medal)
             self.logger.info("%s 应援弹幕 %s/%s: %s", medal.anchor_name, message_number, self.settings.danmaku_count, message)
             if message_number < self.settings.danmaku_count:
                 await self.sleep(self.settings.danmaku_interval_seconds)
+
+    async def _like(self, medal: Medal) -> None:
+        async with self.like_lock:
+            for request_number in range(self.settings.like_request_count):
+                await self._api_call(self.client.like, medal, self.settings.like_clicks_per_request)
+                if request_number < self.settings.like_request_count - 1:
+                    await self.sleep(self.settings.like_interval_seconds)
+
+    async def _api_call(self, function, *args):
+        await self.api_gate.wait()
+        return await function(*args)
 
     def _reset_daily_state(self) -> None:
         current_day = self.today()
@@ -122,3 +145,18 @@ class LiveTaskRunner:
             await self.notifier.publish(title, message, tags=tags)
         except Exception:
             self.logger.exception("通知模块异常")
+
+
+class MinimumInterval:
+    def __init__(self, interval_seconds: float, sleep: Sleep):
+        self.interval_seconds = interval_seconds
+        self.sleep = sleep
+        self.lock = asyncio.Lock()
+        self.next_available = 0.0
+
+    async def wait(self) -> None:
+        async with self.lock:
+            now = time.monotonic()
+            scheduled_at = max(now, self.next_available)
+            self.next_available = scheduled_at + self.interval_seconds
+        await self.sleep(max(0.0, scheduled_at - now))

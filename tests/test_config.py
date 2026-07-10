@@ -19,6 +19,8 @@ danmaku_count: 10
     )
     settings = load_settings(config)
     assert settings.poll_interval_seconds == 60
+    assert settings.like_clicks_per_request == 30
+    assert settings.like_request_count == 10
     assert settings.accounts[0].allows(1)
     assert not settings.accounts[0].allows(3)
 

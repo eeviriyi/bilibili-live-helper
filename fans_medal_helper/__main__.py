@@ -13,10 +13,15 @@ async def run_account(account: AccountConfig, settings: Settings, notifier: Noti
     task_settings = TaskSettings(
         poll_interval_seconds=settings.poll_interval_seconds,
         max_concurrent_streams=settings.max_concurrent_streams,
+        api_interval_seconds=settings.api_interval_seconds,
+        like_clicks_per_request=settings.like_clicks_per_request,
+        like_request_count=settings.like_request_count,
+        like_interval_seconds=settings.like_interval_seconds,
         watch_minutes=settings.watch_minutes,
         heartbeat_interval_seconds=settings.heartbeat_interval_seconds,
         danmaku_count=settings.danmaku_count,
         danmaku_interval_seconds=settings.danmaku_interval_seconds,
+        global_danmaku_interval_seconds=settings.global_danmaku_interval_seconds,
     )
     async with BilibiliClient(account, settings.request_timeout_seconds) as client:
         await LiveTaskRunner(client, task_settings, notifier=notifier).run_forever()

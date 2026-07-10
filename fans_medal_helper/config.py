@@ -29,10 +29,15 @@ class Settings:
     poll_interval_seconds: int
     request_timeout_seconds: int
     max_concurrent_streams: int
+    api_interval_seconds: int
+    like_clicks_per_request: int
+    like_request_count: int
+    like_interval_seconds: int
     watch_minutes: int
     heartbeat_interval_seconds: int
     danmaku_count: int
     danmaku_interval_seconds: int
+    global_danmaku_interval_seconds: int
     ntfy: NtfyConfig | None
 
 
@@ -50,10 +55,15 @@ def load_settings(path: Path) -> Settings:
         poll_interval_seconds=_positive(raw, "poll_interval_seconds", 120),
         request_timeout_seconds=_positive(raw, "request_timeout_seconds", 15),
         max_concurrent_streams=_positive(raw, "max_concurrent_streams", 3),
+        api_interval_seconds=_positive(raw, "api_interval_seconds", 1),
+        like_clicks_per_request=_positive(raw, "like_clicks_per_request", 30),
+        like_request_count=_positive(raw, "like_request_count", 10),
+        like_interval_seconds=_positive(raw, "like_interval_seconds", 4),
         watch_minutes=_non_negative(raw, "watch_minutes", 30),
         heartbeat_interval_seconds=_positive(raw, "heartbeat_interval_seconds", 60),
         danmaku_count=_non_negative(raw, "danmaku_count", 10),
         danmaku_interval_seconds=_positive(raw, "danmaku_interval_seconds", 180),
+        global_danmaku_interval_seconds=_positive(raw, "global_danmaku_interval_seconds", 3),
         ntfy=_parse_ntfy(raw.get("ntfy")),
     )
     if settings.watch_minutes == 0 and settings.danmaku_count == 0:
