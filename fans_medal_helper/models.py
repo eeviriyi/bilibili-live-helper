@@ -5,21 +5,15 @@ from dataclasses import dataclass
 class Medal:
     anchor_id: int
     room_id: int
-    medal_id: int
     anchor_name: str
-
-
-@dataclass(frozen=True)
-class LiveRoom:
-    anchor_id: int
-    room_id: int
-    anchor_name: str
+    live_status: bool
 
 
 @dataclass(frozen=True)
 class TaskSettings:
-    poll_interval: int = 120
-    watching_minutes: int = 30
-    heartbeat_interval: int = 60
+    poll_interval_seconds: int = 120
+    max_concurrent_streams: int = 3
+    watch_minutes: int = 30
+    heartbeat_interval_seconds: int = 60
     danmaku_count: int = 10
-    danmaku_interval: int = 180
+    danmaku_interval_seconds: int = 180

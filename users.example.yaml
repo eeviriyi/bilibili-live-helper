@@ -1,15 +1,21 @@
-USERS:
+# This process never runs a fixed daily task. It polls the medal panel and
+# starts a task only after a medal holder is live.
+accounts:
   - access_key: REPLACE_ME
-    white_uid: 0
-    banned_uid: 0
+    include_uids: []
+    exclude_uids: []
 
-# The runner polls followed live streams and starts a task only after a medal
-# holder is live. Each streamer is processed at most once per calendar day.
-LIVE_POLL_INTERVAL: 120
+poll_interval_seconds: 120
+request_timeout_seconds: 15
+max_concurrent_streams: 3
 
-# A live task sends one 300-click like report, then runs these two jobs in
-# parallel for that stream.
-WATCHINGLIVE: 30
-WATCHINGLIVE_CD: 60
-DANMAKU_COUNT: 10
-DANMAKU_CD: 180
+watch_minutes: 30
+heartbeat_interval_seconds: 60
+
+danmaku_count: 10
+danmaku_interval_seconds: 180
+
+# Optional. Use a private topic or self-hosted endpoint.
+# ntfy:
+#   endpoint: https://ntfy.sh/your-private-topic
+#   token: ""

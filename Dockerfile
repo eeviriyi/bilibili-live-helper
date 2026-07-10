@@ -1,14 +1,19 @@
-FROM python:3.10-alpine
+FROM ghcr.io/astral-sh/uv:0.10.8 AS uv
 
-ENV TZ=Asia/Shanghai
+FROM python:3.14-alpine
 
-WORKDIR /app/fansMedalHelper
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    TZ=Asia/Shanghai \
+    UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy
 
-COPY requirements.txt ./
+WORKDIR /app
 
-RUN apk add --no-cache tzdata \
-    && pip install --no-cache-dir -r requirements.txt
+COPY --from=uv /uv /uvx /bin/
+COPY pyproject.toml uv.lock ./
+RUN uv sync --locked --no-dev --no-install-project
 
-COPY . ./
+COPY fans_medal_helper ./fans_medal_helper
 
-CMD ["python3", "-m", "fans_medal_helper"]
+CMD ["/app/.venv/bin/python", "-m", "fans_medal_helper"]

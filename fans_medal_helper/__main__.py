@@ -1,29 +1,38 @@
 import asyncio
+import logging
+from pathlib import Path
 
-from .client import BilibiliLiveClient, load_config
+from .bilibili import BilibiliClient
+from .config import AccountConfig, Settings, load_settings
 from .models import TaskSettings
+from .notify import NtfyNotifier, Notifier
 from .runner import LiveTaskRunner
 
 
-async def run_account(account: dict, settings: TaskSettings) -> None:
-    client = BilibiliLiveClient(account["access_key"], account.get("white_uid", 0), account.get("banned_uid", 0))
-    await client.login()
-    await LiveTaskRunner(client, settings).run_forever()
+async def run_account(account: AccountConfig, settings: Settings, notifier: Notifier) -> None:
+    task_settings = TaskSettings(
+        poll_interval_seconds=settings.poll_interval_seconds,
+        max_concurrent_streams=settings.max_concurrent_streams,
+        watch_minutes=settings.watch_minutes,
+        heartbeat_interval_seconds=settings.heartbeat_interval_seconds,
+        danmaku_count=settings.danmaku_count,
+        danmaku_interval_seconds=settings.danmaku_interval_seconds,
+    )
+    async with BilibiliClient(account, settings.request_timeout_seconds) as client:
+        await LiveTaskRunner(client, task_settings, notifier=notifier).run_forever()
 
 
 async def main() -> None:
-    config = load_config()
-    settings = TaskSettings(
-        poll_interval=config.get("LIVE_POLL_INTERVAL", 120),
-        watching_minutes=config.get("WATCHINGLIVE", 30),
-        heartbeat_interval=config.get("WATCHINGLIVE_CD", 60),
-        danmaku_count=config.get("DANMAKU_COUNT", 10),
-        danmaku_interval=config.get("DANMAKU_CD", 180),
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
-    accounts = [account for account in config.get("USERS", []) if account.get("access_key")]
-    if not accounts:
-        raise ValueError("未找到有效的 B 站 access_key")
-    await asyncio.gather(*(run_account(account, settings) for account in accounts))
+    settings = load_settings(Path("users.yaml"))
+    if settings.ntfy:
+        async with NtfyNotifier(settings.ntfy.endpoint, settings.ntfy.token) as notifier:
+            await asyncio.gather(*(run_account(account, settings, notifier) for account in settings.accounts))
+    else:
+        await asyncio.gather(*(run_account(account, settings, Notifier()) for account in settings.accounts))
 
 
 if __name__ == "__main__":

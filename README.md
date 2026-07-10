@@ -1,63 +1,58 @@
-# 新 B 站粉丝牌助手（持续更新版）
+# Fans Medal Helper
 
-<p align="center">
-  <img src="https://s1.ax1x.com/2022/05/24/XPx1tx.png" width="200" height="200" alt="">
-</p>
+A personal Bilibili live-stream task runner. It polls the fan-medal panel and
+starts work only when a streamer with one of your medals is live.
 
-当前版本：0.4.4
+For each streamer, once per Asia/Shanghai calendar day, the runner:
 
-## 关于原作
+1. Reports one 300-click like.
+2. Sends live heartbeats for the configured duration.
+3. Sends `[花]` or `[比心]` ten times by default, with a three-minute interval.
 
-感谢原作者的贡献，虽然不知为何要归档一个仍然可以使用的项目，但是既然我有需求用，我就会一直维护（有可能会重构，不过看起来没时间做）
+The process has no HTTP server and exposes no port.
 
-- 原仓库：[XiaoMiku01/fansMedalHelper](https://github.com/XiaoMiku01/fansMedalHelper)
-- 原文档仓库：[XiaoMiku01/fansMedalHelperVersion](https://github.com/XiaoMiku01/fansMedalHelperVersion)
+When `ntfy.endpoint` is configured, task completion is sent to that topic.
+Notification delivery failures are logged and never interrupt a stream task.
 
-## 新增亮点
+## Configuration
 
-~~参见[B站专栏](https://www.bilibili.com/opus/1145501295783706660)~~
+Create a private `users.yaml` from `users.example.yaml`. The file contains an
+account credential and must never be committed or shared.
 
-新增亮点：
+`include_uids` limits tasks to the listed streamer UIDs. An empty list includes
+all medal holders. `exclude_uids` is applied only when `include_uids` is empty.
 
-- 支持**OneBot推送**（http），可以自定义推送Bot
-- 支持**多Cron表达式**，不需要多开配置即可同时开挂多个粉丝牌，以及由此可以实现自动补齐未满最高免费亲密度的粉丝团亲密度
-- **适配最新版**B站粉丝团规则
-- 支持**3月活动签到**（结束后记得关）
-- 支持更多功能的**异步操作和间隔控制**
-- 优化文档
-- *新功能和配置方法待写入文档，文档站仅供参考*
+## Run Locally
 
-## 功能列表
+```bash
+uv sync
+uv run python -m fans_medal_helper
+```
 
-- [x] ~~每日直播签到~~（已下架）
-- [x] 每日点赞
-- [x] 每日弹幕打卡
-- [x] 每日应援团签到
-- [x] 每日活动签到（活动不定时）
-- [x] 每日观看直播
-- [x] 异步观看直播（可能风控）
-- [x] 多账号支持
-- [x] 多定时任务支持
-- [x] 多平台推送通知
+## Run With Docker
 
----
+```bash
+docker build -t fans-medal-helper .
+docker run -d --name fans-medal-helper \
+  --restart unless-stopped \
+  -v "$PWD/users.yaml:/app/users.yaml:ro" \
+  fans-medal-helper
+```
 
-### 使用说明
+## Behavior And Limits
 
-请在 0.4.0 以前的版本的用户，尽快参考新版的示例配置文件重新进行配置
+- Live state is refreshed every `poll_interval_seconds`.
+- A transient API failure is retried three times with exponential backoff; a
+  failed poll is retried at the next polling interval.
+- Stream tasks are capped by `max_concurrent_streams`.
+- The per-day task record is in memory. Restarting the process may repeat a
+  task for a streamer already handled that day.
+- Bilibili API behavior and anti-abuse policies can change. Use conservative
+  intervals and monitor logs after changing task volume.
 
-详细文档在这里 👉 [文档](https://fansMedalHelper.02000721.xyz)（新功能和配置方法待写入文档，文档站仅供参考，请参考示例配置文件）
+## Development
 
-**请细心阅读**
-
----
-
-## 历史 Star 数
-
-[![Stargazers over time](https://starchart.cc/XiaoMiku01/fansMedalHelper.svg)](https://starchart.cc/XiaoMiku01/fansMedalHelper)
-
-[![Stargazers over time](https://starchart.cc/xiaofeiTM233/fansMedalHelper.svg)](https://starchart.cc/xiaofeiTM233/fansMedalHelper)
-
-## Contact
-
-本项目相关问题请不要去打扰原作者，如有问题，请提交 Issue 或[与我联系](https://github.com/xiaofeiTM233)！
+```bash
+uv run pytest
+uv run ruff check .
+```
