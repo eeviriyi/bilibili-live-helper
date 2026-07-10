@@ -10,6 +10,7 @@ from typing import Any
 from urllib.parse import urlencode
 
 import aiohttp
+from curl_cffi.requests import AsyncSession
 
 from .config import AccountConfig
 from .models import Medal
@@ -18,7 +19,7 @@ from .models import Medal
 APP_KEY = "4409e2ce8ffd12b8"
 APP_SECRET = "59b43e04ad6965f34319062b478f83dd"
 APP_HEADERS = {
-    "User-Agent": "Mozilla/5.0 BiliDroid/6.73.1 (Android 12; Mi 10 Pro)",
+    "User-Agent": "Mozilla/5.0 BiliDroid/6.73.1 (bbcallen@gmail.com) os/android model/Mi 10 Pro mobi_app/android build/6731100 channel/xiaomi innerVer/6731110 osVer/12 network/2",
     "Content-Type": "application/x-www-form-urlencoded",
 }
 EMOTES = ("[花]", "[比心]")
@@ -34,16 +35,19 @@ class BilibiliClient:
     timeout_seconds: int
 
     def __post_init__(self) -> None:
-        self.session: aiohttp.ClientSession | None = None
+        self.session: AsyncSession | None = None
         self.mid = 0
         self.buvid3 = ""
         self._heartbeat_session = str(uuid.uuid4())
 
     async def __aenter__(self) -> "BilibiliClient":
-        timeout = aiohttp.ClientTimeout(total=self.timeout_seconds)
-        connector = aiohttp.TCPConnector(limit=10, ttl_dns_cache=300)
-        self.session = aiohttp.ClientSession(timeout=timeout, connector=connector, trust_env=True)
-        await self.login()
+        self.session = AsyncSession(max_clients=10, impersonate="chrome131")
+        try:
+            await self.login()
+        except Exception:
+            await self.session.close()
+            self.session = None
+            raise
         return self
 
     async def __aexit__(self, *_: object) -> None:
@@ -159,21 +163,26 @@ class BilibiliClient:
     async def _request(self, method: str, url: str, **kwargs: Any) -> dict[str, Any]:
         if not self.session:
             raise RuntimeError("客户端尚未启动")
-        last_error: Exception | None = None
+        last_error = "unknown error"
         for attempt in range(3):
             try:
-                async with self.session.request(method, url, **kwargs) as response:
-                    response.raise_for_status()
-                    body = await response.json()
+                response = await self.session.request(
+                    method,
+                    url,
+                    timeout=self.timeout_seconds,
+                    **kwargs,
+                )
+                response.raise_for_status()
+                body = response.json()
                 if body.get("code") != 0:
                     raise BilibiliError(body.get("message", "B 站 API 请求失败"))
                 return body.get("data", {})
             except (aiohttp.ClientError, asyncio.TimeoutError, BilibiliError) as error:
-                last_error = error
+                last_error = _safe_error(error)
                 if attempt == 2:
                     break
                 await asyncio.sleep(2**attempt)
-        raise BilibiliError(str(last_error))
+        raise BilibiliError(last_error)
 
     def _signed(self, data: dict[str, Any]) -> dict[str, Any]:
         payload = {**data, "access_key": self.account.access_key, "actionKey": "appkey", "appkey": APP_KEY, "ts": int(time.time())}
@@ -202,3 +211,9 @@ def _random_token(length: int) -> str:
 
 def _is_live(value: Any) -> bool:
     return value in (1, "1", True)
+
+
+def _safe_error(error: Exception) -> str:
+    if hasattr(error, "status_code"):
+        return f"HTTP {error.status_code}"
+    return str(error).split("url=")[0].rstrip(", ")
