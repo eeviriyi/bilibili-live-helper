@@ -147,7 +147,7 @@ class BilibiliClient:
                     anchor_id=anchor_id,
                     room_id=room_id,
                     anchor_name=anchor.get("nick_name", str(anchor_id)),
-                    live_status=_is_live(room.get("live_status")),
+                    live_status=_is_live(room.get("living_status", room.get("live_status"))),
                 )
             if not items:
                 return
