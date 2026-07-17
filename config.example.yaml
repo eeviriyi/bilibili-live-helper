@@ -1,12 +1,30 @@
 # The whitelist is the only source of streamers. Live status and room metadata
 # are fetched in one public batch request.
 include_uids:
-  - 123456789 # Streamer name
+  - 672328094 # ASoul
+  - 672342685
+  - 672353429
+  - 3537115310721181
+  - 3537115310721781
+  - 2132180406 # Mingqian Nailu
+  - 401315430 # Xing Tong
+  - 1203217682 # Zeyin Melody
+  - 1669777785 # Luzao GOGO
+  - 1795147802
+  - 1878154667
+  - 1660392980
+  - 1900141897
+  - 1217754423
 
 # This ordered list controls the single watching slot. Earlier entries have
 # priority whenever the slot becomes available.
 watch_uids:
-  - 123456789
+  - 2132180406
+  - 672328094
+  - 672342685
+  - 672353429
+  - 3537115310721181
+  - 3537115310721781
 
 poll_interval_seconds: 120
 request_timeout_seconds: 15
@@ -26,5 +44,5 @@ danmaku_interval_seconds: 180
 global_danmaku_interval_seconds: 3
 
 # Failed deliveries remain in the persistent outbox and are retried.
-# ntfy:
-#   endpoint: http://127.0.0.1:2586/inbox
+ntfy:
+  endpoint: https://ntfy.ssvgg.com/notifications
