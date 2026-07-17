@@ -25,7 +25,7 @@ def check_health(
 
 
 def main() -> None:
-    config_path = Path(os.environ.get("BILIBILI_LIVE_HELPER_CONFIG", "users.yaml"))
+    config_path = Path(os.environ.get("BILIBILI_LIVE_HELPER_CONFIG", "config.yaml"))
     state_path = Path(os.environ.get("BILIBILI_LIVE_HELPER_STATE", "data/state.json"))
     healthy, message = check_health(config_path, state_path)
     print(message)

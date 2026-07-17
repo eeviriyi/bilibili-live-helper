@@ -11,7 +11,6 @@ from yaml.resolver import BaseResolver
 
 
 ROOT_FIELDS = {
-    "access_key",
     "include_uids",
     "watch_uids",
     "poll_interval_seconds",
@@ -64,7 +63,6 @@ class NtfyConfig:
 
 @dataclass(frozen=True)
 class Settings:
-    access_key: str
     include_uids: tuple[int, ...]
     watch_uids: tuple[int, ...]
     poll_interval_seconds: int
@@ -90,10 +88,6 @@ def load_settings(path: Path) -> Settings:
         raise ValueError("Configuration root must be a YAML mapping")
     _reject_unknown(raw, ROOT_FIELDS, "configuration")
 
-    access_key = raw.get("access_key")
-    if not isinstance(access_key, str) or not access_key.strip():
-        raise ValueError("access_key cannot be empty")
-
     include_uids = _uid_list(raw.get("include_uids"), "include_uids", required=True)
     watch_uids = _uid_list(raw.get("watch_uids", []), "watch_uids")
     unknown_watch_uids = [uid for uid in watch_uids if uid not in include_uids]
@@ -103,7 +97,6 @@ def load_settings(path: Path) -> Settings:
         )
 
     settings = Settings(
-        access_key=access_key.strip(),
         include_uids=include_uids,
         watch_uids=watch_uids,
         poll_interval_seconds=_bounded_int(raw, "poll_interval_seconds", 120, 30, 3600),
@@ -154,6 +147,16 @@ def _parse_ntfy(value: Any) -> NtfyConfig | None:
     )
 
 
+def load_access_key(path: Path) -> str:
+    try:
+        access_key = path.read_text(encoding="utf-8").strip()
+    except OSError as error:
+        raise RuntimeError(f"Unable to read access key: {error}") from error
+    if not access_key:
+        raise ValueError("access key cannot be empty")
+    return access_key
+
+
 def _uid_list(value: Any, field: str, *, required: bool = False) -> tuple[int, ...]:
     if not isinstance(value, list) or any(
         isinstance(uid, bool) or not isinstance(uid, int) or uid <= 0 for uid in value
@@ -186,6 +189,6 @@ def _reject_unknown(value: dict[str, Any], allowed: set[str], label: str) -> Non
 
 
 def main() -> None:
-    config_path = Path(os.environ.get("BILIBILI_LIVE_HELPER_CONFIG", "users.yaml"))
+    config_path = Path(os.environ.get("BILIBILI_LIVE_HELPER_CONFIG", "config.yaml"))
     load_settings(config_path)
     print("configuration ok")

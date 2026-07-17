@@ -544,7 +544,6 @@ def test_watch_summary_reports_empty_day_without_fake_completion():
 
 def _settings(**changes) -> Settings:
     defaults = Settings(
-        access_key="key",
         include_uids=(1,),
         watch_uids=(),
         poll_interval_seconds=120,

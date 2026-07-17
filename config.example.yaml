@@ -1,6 +1,5 @@
 # The whitelist is the only source of streamers. Live status and room metadata
 # are fetched in one public batch request.
-access_key: REPLACE_ME
 include_uids:
   - 123456789 # Streamer name
 
@@ -26,7 +25,6 @@ danmaku_count: 10
 danmaku_interval_seconds: 180
 global_danmaku_interval_seconds: 3
 
-# Optional. Failed deliveries remain in the persistent outbox and are retried.
+# Failed deliveries remain in the persistent outbox and are retried.
 # ntfy:
-#   endpoint: https://ntfy.example/notifications
-#   token: ""
+#   endpoint: http://127.0.0.1:2586/inbox

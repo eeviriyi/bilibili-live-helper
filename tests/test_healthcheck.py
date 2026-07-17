@@ -8,8 +8,8 @@ from bilibili_live_helper.state import AppState, StateStore
 
 
 def test_healthcheck_accepts_recent_successful_poll(tmp_path):
-    config = tmp_path / "users.yaml"
-    config.write_text("access_key: key\ninclude_uids: [1]\n", encoding="utf-8")
+    config = tmp_path / "config.yaml"
+    config.write_text("include_uids: [1]\n", encoding="utf-8")
     state_path = tmp_path / "state.json"
     StateStore(state_path).save(
         AppState(day=date(2026, 7, 11), last_successful_poll_at=1_000),
@@ -19,8 +19,8 @@ def test_healthcheck_accepts_recent_successful_poll(tmp_path):
 
 
 def test_healthcheck_rejects_stale_or_missing_state(tmp_path):
-    config = tmp_path / "users.yaml"
-    config.write_text("access_key: key\ninclude_uids: [1]\n", encoding="utf-8")
+    config = tmp_path / "config.yaml"
+    config.write_text("include_uids: [1]\n", encoding="utf-8")
     state_path = tmp_path / "state.json"
 
     healthy, message = check_health(config, state_path, now=1_000)
@@ -37,8 +37,8 @@ def test_healthcheck_rejects_stale_or_missing_state(tmp_path):
 
 @pytest.mark.parametrize("timestamp", [float("nan"), 10**400])
 def test_healthcheck_rejects_invalid_poll_timestamp(tmp_path, timestamp):
-    config = tmp_path / "users.yaml"
-    config.write_text("access_key: key\ninclude_uids: [1]\n", encoding="utf-8")
+    config = tmp_path / "config.yaml"
+    config.write_text("include_uids: [1]\n", encoding="utf-8")
     state_path = tmp_path / "state.json"
     state_path.write_text(
         json.dumps(

@@ -56,11 +56,10 @@ cannot permanently block polling.
 
 ## Configuration
 
-Create `users.yaml` from [users.example.yaml](users.example.yaml). The schema is
-strict and supports exactly one account:
+Create `config.yaml` from [config.example.yaml](config.example.yaml). The public
+configuration is strict and supports exactly one account:
 
 ```yaml
-access_key: REPLACE_ME
 include_uids:
   - 123456789
 watch_uids:
@@ -69,7 +68,9 @@ watch_uids:
 
 `include_uids` must not be empty. Every `watch_uids` entry must also be in
 `include_uids`. Duplicate YAML keys, duplicate UIDs, and unknown fields are
-rejected. Like reports are limited to at most 300 clicks per request.
+rejected. Like reports are limited to at most 300 clicks per request. The access
+key is read separately from `BILIBILI_LIVE_HELPER_ACCESS_KEY_FILE` and never
+belongs in `config.yaml`.
 
 The runner treats a Bilibili `code: 0` response as success. It deliberately does
 not add extra intimacy or like-count verification requests.
@@ -86,7 +87,8 @@ uv run python -m bilibili_live_helper
 Local state defaults to `data/state.json`. Paths can be overridden for one run:
 
 ```bash
-BILIBILI_LIVE_HELPER_CONFIG=/path/to/users.yaml \
+BILIBILI_LIVE_HELPER_CONFIG=/path/to/config.yaml \
+BILIBILI_LIVE_HELPER_ACCESS_KEY_FILE=/path/to/access_key \
 BILIBILI_LIVE_HELPER_STATE=/path/to/state.json \
 uv run python -m bilibili_live_helper
 ```
@@ -94,9 +96,9 @@ uv run python -m bilibili_live_helper
 ## NixOS Deployment
 
 Production deployment is a native NixOS service. The infrastructure repository
-pins this repository as a Flake input, stores the complete `users.yaml` as a
+pins this repository as a Flake input, stores only the access key as a
 per-machine SOPS credential, and runs the service with a dynamic user and a
-persistent `StateDirectory`.
+persistent `StateDirectory`. The remaining public configuration is Git-tracked.
 
 The package exposes three commands for the service manager:
 
@@ -106,9 +108,10 @@ bilibili-live-helper-check-config
 bilibili-live-helper-healthcheck
 ```
 
-The service receives its configuration path and state path through
-`BILIBILI_LIVE_HELPER_CONFIG` and `BILIBILI_LIVE_HELPER_STATE`. It does not
-listen on a network port.
+The service receives its configuration path, access-key file path, and state path
+through `BILIBILI_LIVE_HELPER_CONFIG`,
+`BILIBILI_LIVE_HELPER_ACCESS_KEY_FILE`, and
+`BILIBILI_LIVE_HELPER_STATE`. It does not listen on a network port.
 
 ## API Design
 
