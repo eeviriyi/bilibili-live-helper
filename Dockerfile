@@ -10,10 +10,15 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+RUN apk add --no-cache tzdata
+
 COPY --from=uv /uv /uvx /bin/
 COPY pyproject.toml uv.lock ./
 RUN uv sync --locked --no-dev --no-install-project
 
-COPY fans_medal_helper ./fans_medal_helper
+COPY bilibili_live_helper ./bilibili_live_helper
 
-CMD ["/app/.venv/bin/python", "-m", "fans_medal_helper"]
+HEALTHCHECK --interval=60s --timeout=15s --start-period=45s --retries=3 \
+    CMD ["/app/.venv/bin/python", "-m", "bilibili_live_helper.healthcheck"]
+
+CMD ["/app/.venv/bin/python", "-m", "bilibili_live_helper"]

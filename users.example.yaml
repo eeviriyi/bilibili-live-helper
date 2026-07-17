@@ -1,27 +1,32 @@
-# This process never runs a fixed daily task. It polls the medal panel and
-# starts a task only after a medal holder is live.
-accounts:
-  - access_key: REPLACE_ME
-    include_uids: []
-    exclude_uids: []
+# The whitelist is the only source of streamers. Live status and room metadata
+# are fetched in one public batch request.
+access_key: REPLACE_ME
+include_uids:
+  - 123456789 # Streamer name
+
+# This ordered list controls the single watching slot. Earlier entries have
+# priority whenever the slot becomes available.
+watch_uids:
+  - 123456789
 
 poll_interval_seconds: 120
 request_timeout_seconds: 15
-max_concurrent_streams: 3
 api_interval_seconds: 1
 
 like_clicks_per_request: 30
 like_request_count: 10
-like_interval_seconds: 4
+like_interval_seconds: 60
 
-watch_minutes: 30
+# This is an exact duration target. The heartbeat interval only controls how
+# many seconds each request accounts for and does not change the total.
+watch_minutes: 150
 heartbeat_interval_seconds: 60
 
 danmaku_count: 10
 danmaku_interval_seconds: 180
 global_danmaku_interval_seconds: 3
 
-# Optional. Use a private topic or self-hosted endpoint.
+# Optional. Failed deliveries remain in the persistent outbox and are retried.
 # ntfy:
-#   endpoint: https://ntfy.sh/your-private-topic
+#   endpoint: https://ntfy.example/notifications
 #   token: ""
