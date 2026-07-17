@@ -23,9 +23,11 @@ jobs:
       - run: uv run pytest -p no:cacheprovider
       - run: uv run ruff check . --no-cache
 
-  image:
+  nix:
     runs-on: ubuntu-latest
     needs: test
     steps:
       - uses: actions/checkout@v4
-      - run: docker build --tag bilibili-live-helper:ci .
+      - uses: DeterminateSystems/nix-installer-action@v20
+      - run: nix flake check
+      - run: nix build .#default --no-link

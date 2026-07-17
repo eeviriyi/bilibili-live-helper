@@ -12,7 +12,7 @@ from .runner import LiveTaskRunner
 from .state import StateStore
 
 
-async def main() -> None:
+async def run() -> None:
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
@@ -49,5 +49,9 @@ async def main() -> None:
         await runner.run_forever(stop_event)
 
 
+def main() -> None:
+    asyncio.run(run())
+
+
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

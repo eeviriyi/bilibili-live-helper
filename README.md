@@ -91,18 +91,24 @@ BILIBILI_LIVE_HELPER_STATE=/path/to/state.json \
 uv run python -m bilibili_live_helper
 ```
 
-## Run With Docker
+## NixOS Deployment
 
-```bash
-mkdir -p data
-docker compose up -d --build
-docker compose ps
+Production deployment is a native NixOS service. The infrastructure repository
+pins this repository as a Flake input, stores the complete `users.yaml` as a
+per-machine SOPS credential, and runs the service with a dynamic user and a
+persistent `StateDirectory`.
+
+The package exposes three commands for the service manager:
+
+```text
+bilibili-live-helper
+bilibili-live-helper-check-config
+bilibili-live-helper-healthcheck
 ```
 
-The repository [compose.yaml](compose.yaml) exposes no port. It adds a
-state-freshness health check, a 30-second graceful-stop window, bounded Docker
-log rotation, a read-only root filesystem, and a writable `/data` mount. The
-image also carries the same health check when it is run without Compose.
+The service receives its configuration path and state path through
+`BILIBILI_LIVE_HELPER_CONFIG` and `BILIBILI_LIVE_HELPER_STATE`. It does not
+listen on a network port.
 
 ## API Design
 
@@ -130,5 +136,5 @@ uv run ruff check . --no-cache
 uv lock --check
 ```
 
-GitHub Actions runs these checks and builds the Docker image for every push and
-pull request to `master`.
+GitHub Actions also evaluates the Flake and builds the production package for
+every push and pull request to `master`.

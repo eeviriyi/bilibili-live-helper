@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -182,3 +183,9 @@ def _reject_unknown(value: dict[str, Any], allowed: set[str], label: str) -> Non
     unknown = sorted(set(value) - allowed)
     if unknown:
         raise ValueError(f"Unknown {label} fields: {', '.join(unknown)}")
+
+
+def main() -> None:
+    config_path = Path(os.environ.get("BILIBILI_LIVE_HELPER_CONFIG", "users.yaml"))
+    load_settings(config_path)
+    print("configuration ok")

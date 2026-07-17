@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 
+from bilibili_live_helper import config
 from bilibili_live_helper.config import load_settings
 
 
@@ -80,6 +81,15 @@ def test_rejects_unsafe_values(tmp_path: Path, field: str, value: str, message: 
     )
     with pytest.raises(ValueError, match=message):
         load_settings(config)
+
+
+def test_check_config_entrypoint_uses_environment_path(tmp_path: Path, monkeypatch, capsys):
+    config_path = _write_config(tmp_path, "access_key: key\ninclude_uids: [1]\n")
+    monkeypatch.setenv("BILIBILI_LIVE_HELPER_CONFIG", str(config_path))
+
+    config.main()
+
+    assert capsys.readouterr().out == "configuration ok\n"
 
 
 def _write_config(tmp_path: Path, value: str) -> Path:
