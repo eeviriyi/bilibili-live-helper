@@ -28,6 +28,7 @@ like_interval_seconds: 60
 # priority whenever the slot becomes available.
 watch_uids:
   - 2132180406
+  - 1669777785
   - 672328094
   - 672342685
   - 672353429

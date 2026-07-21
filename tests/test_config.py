@@ -28,6 +28,11 @@ ntfy:
     assert settings.ntfy.endpoint == "https://ntfy.example/notifications"
 
 
+def test_checked_in_config_is_valid():
+    root = Path(__file__).parents[1]
+    load_settings(root / "config.yaml")
+
+
 def test_rejects_removed_multi_account_format(tmp_path: Path):
     config = _write_config(tmp_path, "accounts: []\n")
     with pytest.raises(ValueError, match="Unknown configuration fields: accounts"):

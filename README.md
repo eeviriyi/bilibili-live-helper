@@ -56,8 +56,8 @@ cannot permanently block polling.
 
 ## Configuration
 
-Create `config.yaml` from [config.example.yaml](config.example.yaml). The public
-configuration is strict and supports exactly one account:
+Edit the checked-in `config.yaml` directly. The public configuration is strict
+and supports exactly one account:
 
 ```yaml
 include_uids:
